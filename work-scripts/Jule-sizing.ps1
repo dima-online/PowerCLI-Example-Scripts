@@ -1,3 +1,4 @@
+connect-viserver -Server vcenter.kazpost.kz
 Get-VM -Name 'OREL 7.3 - INFORM_DWH' | Set-VM -MemoryMB 4096 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'CentOS 7 - TechnoServ IDa' | Set-VM -MemoryMB 5120 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'Centos-pus-sborka' | Set-VM -MemoryMB 3072 -RunAsync   -Confirm:$false -WhatIf:$false
@@ -90,7 +91,7 @@ Get-VM -Name 'CentOS - callcentre' | Set-VM -MemoryMB 8192 -RunAsync   -Confirm:
 Get-VM -Name 'Centos 7 - test for Rassul' | Set-VM -MemoryMB 3072 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'RHEL - hyper-app' | Set-VM -MemoryMB 11264 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'WIN 2012 - HURPDR' | Set-VM -MemoryMB 5120 -RunAsync   -Confirm:$false -WhatIf:$false
-Get-VM -Name 'CentOS 7 - Grafan' | Set-VM -MemoryMB 3072 -RunAsync   -Confirm:$false -WhatIf:$false
+Get-VM -Name 'CentOS 7 - Grafan' | Set-VM -MemoryMB 1024 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'CentOS 7 - VeeRoute_App' | Set-VM -MemoryMB 9216 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'Ubuntu 16.04 - Online wallet' | Set-VM -MemoryMB 9216 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'Ubuntu 16.04 - Scan2' | Set-VM -MemoryMB 6144 -RunAsync   -Confirm:$false -WhatIf:$false
@@ -112,3 +113,17 @@ Get-VM -Name 'Win 2003 - KazDRV177' | Set-VM -MemoryMB 3072 -RunAsync   -Confirm
 Get-VM -Name 'Win 2012 - CMDBv2' | Set-VM -MemoryMB 18432 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'Cent OS - SSO.KAZPOST.KZ' | Set-VM -MemoryMB 6144 -RunAsync   -Confirm:$false -WhatIf:$false
 Get-VM -Name 'Debian 8.7 - qa.post.kz' | Set-VM -MemoryMB 6144 -RunAsync   -Confirm:$false -WhatIf:$false
+
+
+$spec=New-Object –Type VMware.Vim.VirtualMAchineConfigSpec –Property @{“NumCoresPerSocket” = 1}
+
+$VMname= Get-VM -Name 'CentOS 7 - Grafan'
+($VMname).ExtensionData.ReconfigVM_Task($spec)
+$VMname | Set-VM -numcpu 1 -RunAsync   -Confirm:$false -WhatIf:$false
+
+connect-viserver -Server vcenter.kazpost.kz
+$spec=New-Object –Type VMware.Vim.VirtualMAchineConfigSpec –Property @{“NumCoresPerSocket” = 1}
+$VMname= Get-VM -Name 'CentOS 7 - New zip codes'
+($VMname).ExtensionData.ReconfigVM_Task($spec)
+$VMname | Set-VM -numcpu 1 -RunAsync   -Confirm:$false -WhatIf:$false
+

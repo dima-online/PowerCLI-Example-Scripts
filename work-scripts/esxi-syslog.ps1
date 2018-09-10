@@ -32,8 +32,9 @@ Get-VmHostService -VMHost $esxi | Where-Object {$_.key -eq "ntpd"} | Set-VMHostS
 
 
 connect-viserver -Server vcenter.kazpost.kz
-$esxi = Get-VMHost -name esxi54.kazpost.kz
- 
+Set-HTAwareMitigationSuppression -VMHostName esxi39.kazpost.kz -Enable
+$esxi = Get-VMHost -name esxi39.kazpost.kz
+
 		Write-host "Processing on" $esxi
 		#Set the Syslog Server
 		$esxi | Get-AdvancedSetting -Name Syslog.global.logHost | Set-AdvancedSetting -Value "udp://syslog.kazpost.kz:514"  -Confirm:$false -WhatIf:$false
@@ -53,3 +54,4 @@ Get-VMHostFirewallException -VMHost $esxi | where {$_.Name -eq "NTP client"} | S
 #Start NTP client service and set to automatic
 Get-VmHostService -VMHost $esxi | Where-Object {$_.key -eq "ntpd"} | Start-VMHostService
 Get-VmHostService -VMHost $esxi | Where-Object {$_.key -eq "ntpd"} | Set-VMHostService -policy "automatic"
+
