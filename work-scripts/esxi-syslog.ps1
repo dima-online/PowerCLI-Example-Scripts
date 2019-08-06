@@ -37,8 +37,8 @@ Get-VmHostService -VMHost $esxi | Where-Object {$_.key -eq "ntpd"} | Set-VMHostS
 
 connect-viserver -Server vcenter.kazpost.kz 
 
-#$hosts = @("esxi15.kazpost.kz","esxi16.kazpost.kz")
-$hosts = @("esxi43.kazpost.kz")
+$hosts = @("172.30.73.239","172.30.73.9","esxshm2.kazpost.kz")
+#$hosts = @("esxi26.kazpost.kz")
 
 foreach ($hostname in $hosts) {
 Write-host "Processing on" $hostname

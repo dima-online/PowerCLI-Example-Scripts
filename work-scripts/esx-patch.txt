@@ -1,0 +1,21 @@
+vim-cmd hostsvc/maintenance_mode_enter
+cd /vmfs/volumes/3PAR01/Updates/
+ls
+
+esxcli software vib install -d "/vmfs/volumes/3PAR01/Updates/ESXi650-201806001.zip" -f
+esxcli software vib install -d "/vmfs/volumes/3PAR01/Updates/ESXi650-201808001.zip" -f
+
+#from ESXi650-201808001 9298722
+esxcli software vib install -d "/vmfs/volumes/3PAR01/Updates/ESXi650-201810001.zip" -f
+
+esxcli software vib install -d "/vmfs/volumes/3PAR01/Updates/ESXi650-201810002.zip" -f
+
+esxcli software vib install -d "/vmfs/volumes/3PAR01/Updates/ESXi650-201811001.zip" -f
+
+esxcli software vib install -d "/vmfs/volumes/3PAR01/Updates/ESXi650-201811002.zip" -f
+
+esxcli software vib install -d "/vmfs/volumes/3PAR01/Updates/ESXi650-201901001.zip" -f
+
+esxcli software vib install -d "/vmfs/volumes/3PAR01/Updates/ESXi650-201903001.zip" -f
+
+reboot

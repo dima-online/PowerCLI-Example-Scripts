@@ -1,0 +1,101 @@
+wget https://repo.zabbix.com/zabbix/4.2/debian/pool/main/z/zabbix-release/zabbix-release_4.2-1%2Bstretch_all.deb
+dpkg -i zabbix-release_4.2-1+stretch_all.deb
+apt update
+apt install zabbix-agent
+service zabbix-agent start
+
+docker run -d -p 9000:9000 --restart always --name portainer --hostname portainer -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+
+docker volume create zabbix-data
+docker volume create zabbix-alerts
+docker volume create zabbix-scripts
+
+docker create -v zabbix-data:/var/lib/mysql --name mysqldata mysql:5.7
+
+docker run --name zabbix_mysql -t \
+   --volumes-from mysqldata	\
+   -e MYSQL_DATABASE="zabbix" \
+   -e MYSQL_USER="zabbix" \
+   -e MYSQL_PASSWORD="hor25amso" \
+   -e MYSQL_ROOT_PASSWORD="hor25amso" \
+   -d mysql:5.7.25 \
+   --character-set-server=utf8 --collation-server=utf8_bin
+  
+docker run --name zabbix-java-gateway -t \
+   -d zabbix/zabbix-java-gateway:alpine-4.2.0
+
+docker run --name zabbix-snmptraps --hostname zabbix-snmptraps -p 162:162/udp --restart always -d zabbix/zabbix-snmptraps:alpine-4.2.0
+docker run --name zabbix-agent --hostname zabbix-agent  \
+   --restart always \
+   -e ZBX_HOSTNAME="zabbix-agent" \
+   -e ZBX_SERVER_HOST="zabbix-server" \
+   -v /dev/sdc:/dev/sdc --privileged \
+   --link zabbix-server-mysql:zabbix-server -d zabbix/zabbix-agent:alpine-4.2.0
+
+   
+docker run --name zabbix-server-mysql --hostname zabbix-server -t \
+   -e DB_SERVER_HOST="zabbix_mysql" \
+   -e MYSQL_DATABASE="zabbix" \
+   -e MYSQL_USER="zabbix" \
+   -e MYSQL_PASSWORD="hor25amso" \
+   -e MYSQL_ROOT_PASSWORD="hor25amso" \
+   -e ZBX_STARTTRAPPERS=20 \
+   -e ZBX_STARTPINGERS=5 \
+   -e ZBX_JAVAGATEWAY=zabbix-java-gateway \
+   -e HTTP_PROXY="http://192.168.30.2:3128" \
+   -e HTTPS_PROXY="http://192.168.30.2:3128" \
+   -e ZBX_TIMEOUT=30 \
+   -e ZBX_ENABLE_SNMP_TRAPS=true \
+   -e ZBX_TIMEZONE="Asia/Almaty" \
+   -e ZBX_VMWARECACHESIZE="256M" \
+   -e ZBX_CACHESIZE="256M" \
+   -e ZBX_CACHEUPDATEFREQUENCY=60 \
+   -e ZBX_HISTORYCACHESIZE="512M" \
+   -e ZBX_HISTORYINDEXCACHESIZE="128M" \
+   -e ZBX_TRENDCACHESIZE="128M" \
+   -e ZBX_VALUECACHESIZE="256M" \
+   -e ZBX_TIMEZONE="Asia/Almaty" \
+   -e TZ="Asia/Almaty" \
+   --link zabbix_mysql:mysql \
+   --link zabbix-java-gateway:zabbix-java-gateway \
+   --link zabbix-snmptraps:zabbix-snmptraps \
+   --volumes-from zabbix-snmptraps \
+   -v zabbix-mibs:/var/lib/zabbix/mibs \
+   -v zabbix-scripts:/usr/lib/zabbix/externalscripts \
+   -v zabbix-alerts:/usr/lib/zabbix/alertscripts \
+   -p 10051:10051  --restart always \
+   -d zabbix/zabbix-server-mysql:ubuntu-4.2.0
+  
+docker run --name zabbix-web-nginx-mysql --hostname nginx -t \
+   -e DB_SERVER_HOST="zabbix_mysql" \
+   -e MYSQL_DATABASE="zabbix" \
+   -e MYSQL_USER="zabbix" \
+   -e MYSQL_PASSWORD="hor25amso" \
+   -e MYSQL_ROOT_PASSWORD="hor25amso" \
+   -e HTTP_PROXY="http://192.168.30.2:3128" \
+   -e HTTPS_PROXY="http://192.168.30.2:3128" \
+   -e PHP_TZ="Asia/Almaty" \
+   -e TZ="Asia/Almaty" \
+   --link zabbix_mysql:mysql \
+   --link zabbix-server-mysql:zabbix-server \
+   -p 80:80  --restart always \
+   -d zabbix/zabbix-web-nginx-mysql:ubuntu-4.2.0
+
+
+docker exec -i -t zabbix-server-mysql bash
+apt-get --no-show-upgraded update
+apt-get -y install curl tzdata ca-certificates
+ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+mkdir /var/log/zabbix/
+touch /var/log/zabbix/telegram.log
+chown zabbix:zabbix /var/log/zabbix/telegram.log
+chmod 666 /var/log/zabbix/telegram.log
+
+docker exec -i -t zabbix-web-nginx-mysql bash
+apt-get --no-show-upgraded update
+apt-get -y install tzdata
+ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+apt-get -y install vim
+
+export http_proxy=http://192.168.30.2:3128
+export https_proxy=http://192.168.30.2:3128

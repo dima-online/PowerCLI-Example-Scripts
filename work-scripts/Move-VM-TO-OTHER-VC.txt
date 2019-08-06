@@ -1,0 +1,74 @@
+$SourceVC = “vcenter.kazpost.kz”
+$DestVC = “vcenter.kazpost.kz”
+$DestCluster = “Blade”
+$DestFolder = “VMs Windows”
+
+#$UserFile = “User.fil”
+#$PassFile = “Pass.fil”
+
+$cred = Get-Credential
+
+# Functions ———————————————————————————
+
+function Log ($text) {
+$stamp = (Get-Date).ToString(“HH:mm:ss.fff”)
+Write-Host “$stamp | $text”
+}
+
+# Business part of script ——————————————————————-
+
+Start-Transcript -Path VM-Move-VC.log -Append
+
+# Disconnect any existing VI Server sessions
+if ($DefaultVIServers.Count) {
+Log(“Disconnect existing vCentre server connections…”)
+Disconnect-VIServer -Server * -Force -Confirm:$false
+}
+
+# Connect to source VC
+try {
+Log “Connecting to $SourceVC”
+$VCconn = Connect-VIServer -Server $SourceVC -Credential $cred -errorAction Stop
+} catch {
+Log(“Unable to connect to vCentre – ” + $_)
+Exit
+}
+
+# Get list of VMs to move
+$VMs = Get-Content “D:\TEMP\source.csv”
+Log “VMXs to reregister…”
+$VMs2Move = @()
+foreach ($vm in $VMs) {
+$vm2move = “” | Select Name, Path
+$vm2move.Name = $vm.name
+$vm2move.Path = $vm.ExtensionData.Config.Files.VmPathName
+$VMs2Move += $vm2move
+Log ($vm2move.Name + ” ” + $vm2move.Path)
+}
+#$VMs | Get-View | %{$_.Config.Files.VmPathName} | Sort
+
+# Unregister VMs
+foreach ($vm in $VMs) {
+Log (“Unregister ” + $vm.Name)
+Remove-VM -VM $vm -DeletePermanently:$false -Confirm:$false
+}
+
+Disconnect-VIServer -Server $VCconn -Confirm:$false
+
+# Connect to destination VC
+try {
+Log “Connecting to $DestVC”
+$VCconn = Connect-VIServer -Server $DestVC -Credential $cred -errorAction Stop
+} catch {
+Log(“Unable to connect to vCentre – ” + $_)
+Exit
+}
+
+# Register VMs
+foreach ($vm in $VMs2Move) {
+Log (“Register ” + $vm.Name)
+New-VM -VMFilePath $vm.Path -VMHost (Get-Cluster $DestCluster | Get-VMHost | Get-Random) -Location (Get-Folder $DestFolder)
+}
+
+Disconnect-VIServer -Server $VCconn -Confirm:$false
+Stop-Transcript
